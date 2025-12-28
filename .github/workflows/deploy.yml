@@ -1,0 +1,149 @@
+name: Deploy All Services
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_web:
+        description: "Deploy TPWFC Web"
+        required: true
+        default: true
+        type: boolean
+      deploy_server:
+        description: "Deploy TPWFC Discord Server"
+        required: true
+        default: true
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  deploy:
+    name: Deploy All Services
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.4
+        env:
+          REGISTRY: ghcr.io
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+          DEPLOY_WEB: ${{ inputs.deploy_web }}
+          DEPLOY_SERVER: ${{ inputs.deploy_server }}
+          # Web secrets
+          PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
+          PAYLOAD_SEED: ${{ secrets.PAYLOAD_SEED }}
+          BACKEND_WEBHOOK_SECRET: ${{ secrets.BACKEND_WEBHOOK_SECRET }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          # Web environment vars
+          DATABASE_URI: ${{ vars.DATABASE_URI }}
+          NEXT_PUBLIC_BASE_URL: ${{ vars.NEXT_PUBLIC_BASE_URL }}
+          NEXT_PUBLIC_BACKEND_API_URL: ${{ vars.NEXT_PUBLIC_BACKEND_API_URL }}
+          NEXT_PUBLIC_DISCORD_SERVER_URL: ${{ vars.NEXT_PUBLIC_DISCORD_SERVER_URL }}
+          NEXT_PUBLIC_DISCORD_FEEDBACK_CHANNEL: ${{ vars.NEXT_PUBLIC_DISCORD_FEEDBACK_CHANNEL }}
+          LOG_LEVEL: ${{ vars.LOG_LEVEL }}
+          ENABLE_PRETTY_LOGS: ${{ vars.ENABLE_PRETTY_LOGS }}
+          LOG_COLORS: ${{ vars.LOG_COLORS }}
+          LOG_SINGLE_LINE: ${{ vars.LOG_SINGLE_LINE }}
+          SERVICE_NAME: ${{ vars.SERVICE_NAME }}
+          # Server secrets
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          TURNSTILE_SITE_KEY: ${{ secrets.TURNSTILE_SITE_KEY }}
+          SERVER_GH_TOKEN: ${{ secrets.SERVER_GH_TOKEN }}
+          # Seeder secrets
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          # Server environment vars
+          SERVER_DATABASE_URL: ${{ vars.SERVER_DATABASE_URL }}
+          SERVER_DISCORD_CLIENT_ID: ${{ vars.SERVER_DISCORD_CLIENT_ID }}
+          SERVER_PORT: ${{ vars.SERVER_PORT }}
+          SERVER_HOST_NAME: ${{ vars.SERVER_HOST_NAME }}
+          SERVER_NODE_ENV: ${{ vars.SERVER_NODE_ENV }}
+          PAYLOAD_API_URL: ${{ vars.PAYLOAD_API_URL }}
+          PRISMA_LOG_LEVEL: ${{ vars.PRISMA_LOG_LEVEL }}
+          LOG_SHOW_LEVEL: ${{ vars.LOG_SHOW_LEVEL }}
+          LOG_SHOW_TIME: ${{ vars.LOG_SHOW_TIME }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: REGISTRY,GH_TOKEN,CLOUDFLARE_TUNNEL_TOKEN,DEPLOY_WEB,DEPLOY_SERVER,PAYLOAD_SECRET,PAYLOAD_SEED,BACKEND_WEBHOOK_SECRET,NEXT_PUBLIC_TURNSTILE_SITE_KEY,DATABASE_URI,NEXT_PUBLIC_BASE_URL,NEXT_PUBLIC_BACKEND_API_URL,NEXT_PUBLIC_DISCORD_SERVER_URL,NEXT_PUBLIC_DISCORD_FEEDBACK_CHANNEL,LOG_LEVEL,ENABLE_PRETTY_LOGS,LOG_COLORS,LOG_SINGLE_LINE,SERVICE_NAME,DISCORD_TOKEN,BACKEND_WEBHOOK_SECRET,TURNSTILE_SECRET_KEY,TURNSTILE_SITE_KEY,SERVER_GH_TOKEN,SERVER_DATABASE_URL,SERVER_DISCORD_CLIENT_ID,SERVER_PORT,SERVER_HOST_NAME,SERVER_NODE_ENV,PAYLOAD_API_URL,PRISMA_LOG_LEVEL,LOG_SHOW_LEVEL,LOG_SHOW_TIME,ADMIN_EMAIL,ADMIN_PASSWORD
+          script: |
+            # Setup deployment directory
+            mkdir -p /opt/tpwfc
+            cd /opt/tpwfc
+
+            # Login to GitHub Container Registry
+            echo "$GH_TOKEN" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Generate .env file for web
+            cat > .env << 'ENVEOF'
+            PAYLOAD_SECRET=$PAYLOAD_SECRET
+            PAYLOAD_SEED=$PAYLOAD_SEED
+            DATABASE_URI=$DATABASE_URI
+            NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
+            NEXT_PUBLIC_BACKEND_API_URL=$NEXT_PUBLIC_BACKEND_API_URL
+            BACKEND_WEBHOOK_SECRET=$BACKEND_WEBHOOK_SECRET
+            NEXT_PUBLIC_DISCORD_SERVER_URL=$NEXT_PUBLIC_DISCORD_SERVER_URL
+            NEXT_PUBLIC_DISCORD_FEEDBACK_CHANNEL=$NEXT_PUBLIC_DISCORD_FEEDBACK_CHANNEL
+            NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
+            LOG_LEVEL=$LOG_LEVEL
+            ENABLE_PRETTY_LOGS=$ENABLE_PRETTY_LOGS
+            LOG_COLORS=$LOG_COLORS
+            LOG_SINGLE_LINE=$LOG_SINGLE_LINE
+            SERVICE_NAME=$SERVICE_NAME
+            CLOUDFLARE_TUNNEL_TOKEN=$CLOUDFLARE_TUNNEL_TOKEN
+            ENVEOF
+            envsubst < .env > .env.tmp && mv .env.tmp .env
+
+            # Generate .env.server for discord bot
+            cat > .env.server << 'ENVEOF'
+            NODE_ENV=$SERVER_NODE_ENV
+            PORT=$SERVER_PORT
+            HOST_NAME=$SERVER_HOST_NAME
+            DATABASE_URL=$SERVER_DATABASE_URL
+            DISCORD_TOKEN=$DISCORD_TOKEN
+            DISCORD_CLIENT_ID=$SERVER_DISCORD_CLIENT_ID
+            GH_TOKEN=$SERVER_GH_TOKEN
+            PAYLOAD_API_URL=$PAYLOAD_API_URL
+            PRISMA_LOG_LEVEL=$PRISMA_LOG_LEVEL
+            LOG_LEVEL=$LOG_LEVEL
+            ENABLE_PRETTY_LOGS=$ENABLE_PRETTY_LOGS
+            LOG_COLORS=$LOG_COLORS
+            LOG_SINGLE_LINE=$LOG_SINGLE_LINE
+            LOG_SHOW_LEVEL=$LOG_SHOW_LEVEL
+            LOG_SHOW_TIME=$LOG_SHOW_TIME
+            BACKEND_WEBHOOK_SECRET=$BACKEND_WEBHOOK_SECRET
+            TURNSTILE_SECRET_KEY=$TURNSTILE_SECRET_KEY
+            TURNSTILE_SITE_KEY=$TURNSTILE_SITE_KEY
+            ENVEOF
+            envsubst < .env.server > .env.server.tmp && mv .env.server.tmp .env.server
+
+            # Generate .env.seeder for data upload
+            cat > .env.seeder << 'ENVEOF'
+            ADMIN_EMAIL=$ADMIN_EMAIL
+            ADMIN_PASSWORD=$ADMIN_PASSWORD
+            ENVEOF
+            envsubst < .env.seeder > .env.seeder.tmp && mv .env.seeder.tmp .env.seeder
+
+            # Download docker-compose.yaml
+            curl -sL https://raw.githubusercontent.com/TPWFC/tpwfc-deploy/main/docker-compose.yaml -o docker-compose.yaml
+
+            # Pull latest images
+            docker compose pull
+
+            # Deploy with docker compose
+            docker compose up -d --remove-orphans
+
+            # Cleanup old images
+            docker image prune -f
+
+            # Verify containers are running
+            docker compose ps
