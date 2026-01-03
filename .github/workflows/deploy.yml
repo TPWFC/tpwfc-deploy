@@ -86,8 +86,8 @@ jobs:
             # Login to GitHub Container Registry
             echo "$GH_TOKEN" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Generate .env file for web
-            cat > .env << 'ENVEOF'
+            # Generate .env.client file for web
+            cat > .env.client << 'ENVEOF'
             PAYLOAD_SECRET=$PAYLOAD_SECRET
             PAYLOAD_SEED=$PAYLOAD_SEED
             DATABASE_URI=$DATABASE_URI
@@ -104,7 +104,7 @@ jobs:
             SERVICE_NAME=$SERVICE_NAME
             CLOUDFLARE_TUNNEL_TOKEN=$CLOUDFLARE_TUNNEL_TOKEN
             ENVEOF
-            envsubst < .env > .env.tmp && mv .env.tmp .env
+            envsubst < .env.client > .env.client.tmp && mv .env.client.tmp .env.client
 
             # Generate .env.server for discord bot
             cat > .env.server << 'ENVEOF'
