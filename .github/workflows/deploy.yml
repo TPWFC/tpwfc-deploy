@@ -97,13 +97,14 @@ jobs:
             NEXT_PUBLIC_DISCORD_SERVER_URL=$NEXT_PUBLIC_DISCORD_SERVER_URL
             NEXT_PUBLIC_DISCORD_FEEDBACK_CHANNEL=$NEXT_PUBLIC_DISCORD_FEEDBACK_CHANNEL
             NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
+            SEED_SIGNING_SECRET=$SEED_SIGNING_SECRET
             LOG_LEVEL=$LOG_LEVEL
             ENABLE_PRETTY_LOGS=$ENABLE_PRETTY_LOGS
             LOG_COLORS=$LOG_COLORS
             LOG_SINGLE_LINE=$LOG_SINGLE_LINE
             SERVICE_NAME=$SERVICE_NAME
             ENVEOF
-            envsubst < .env.client > .env.client.tmp && mv .env.client.tmp .env.client
+            sed 's/^[[:space:]]*//' .env.client | envsubst > .env.client.tmp && mv .env.client.tmp .env.client
 
             # Generate .env.server for discord bot
             cat > .env.server << 'ENVEOF'
@@ -126,7 +127,7 @@ jobs:
             TURNSTILE_SECRET_KEY=$TURNSTILE_SECRET_KEY
             TURNSTILE_SITE_KEY=$TURNSTILE_SITE_KEY
             ENVEOF
-            envsubst < .env.server > .env.server.tmp && mv .env.server.tmp .env.server
+            sed 's/^[[:space:]]*//' .env.server | envsubst > .env.server.tmp && mv .env.server.tmp .env.server
 
             # Generate .env.worker for data upload
             cat > .env.worker << 'ENVEOF'
@@ -134,13 +135,13 @@ jobs:
             ADMIN_PASSWORD=$ADMIN_PASSWORD
             SEED_SIGNING_SECRET=$SEED_SIGNING_SECRET
             ENVEOF
-            envsubst < .env.worker > .env.worker.tmp && mv .env.worker.tmp .env.worker
+            sed 's/^[[:space:]]*//' .env.worker | envsubst > .env.worker.tmp && mv .env.worker.tmp .env.worker
 
             # Generate .env.cloudflare for tunnel
             cat > .env.cloudflare << 'ENVEOF'
             TUNNEL_TOKEN=$CLOUDFLARE_TUNNEL_TOKEN
             ENVEOF
-            envsubst < .env.cloudflare > .env.cloudflare.tmp && mv .env.cloudflare.tmp .env.cloudflare
+            sed 's/^[[:space:]]*//' .env.cloudflare | envsubst > .env.cloudflare.tmp && mv .env.cloudflare.tmp .env.cloudflare
 
             # Download docker-compose.yaml
             curl -sL https://raw.githubusercontent.com/TPWFC/tpwfc-deploy/main/docker-compose.yaml -o docker-compose.yaml
