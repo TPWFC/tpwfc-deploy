@@ -5,8 +5,8 @@ services:
     container_name: tpwfc-web
     restart: unless-stopped
     volumes:
-      - tpwfc-web-db:/app/.db
-      - ./data:/app/data:ro
+      - tpwfc-web-db:/app/data/db
+      - ./data:/app/data/source:ro
     env_file:
       - .env.client
     environment:
