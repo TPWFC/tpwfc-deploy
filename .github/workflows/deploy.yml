@@ -58,8 +58,6 @@ jobs:
           # Server secrets
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
-          TURNSTILE_SITE_KEY: ${{ secrets.TURNSTILE_SITE_KEY }}
-          SERVER_GH_TOKEN: ${{ secrets.SERVER_GH_TOKEN }}
           GH_PA_FG_TOKEN: ${{ secrets.GH_PA_FG_TOKEN }}
           # Seeder secrets
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
