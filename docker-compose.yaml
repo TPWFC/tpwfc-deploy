@@ -7,23 +7,8 @@ services:
     volumes:
       - tpwfc-web-db:/app/data/db
       - ./data:/app/data/source:ro
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URI=${DATABASE_URI}
-      - PAYLOAD_SECRET=${PAYLOAD_SECRET}
-      - PAYLOAD_SEED=${PAYLOAD_SEED}
-      - ADMIN_EMAIL=${ADMIN_EMAIL}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
-      - NEXT_PUBLIC_BACKEND_API_URL=${NEXT_PUBLIC_BACKEND_API_URL}
-      - NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
-      - SEED_SIGNING_SECRET=${SEED_SIGNING_SECRET}
-      - BACKEND_WEBHOOK_SECRET=${BACKEND_WEBHOOK_SECRET}
-      - NEXT_PUBLIC_DISCORD_SERVER_URL=${NEXT_PUBLIC_DISCORD_SERVER_URL}
-      - NEXT_PUBLIC_DISCORD_FEEDBACK_CHANNEL=${NEXT_PUBLIC_DISCORD_FEEDBACK_CHANNEL}
-      - LOG_LEVEL=${LOG_LEVEL}
-      - ENABLE_PRETTY_LOGS=${ENABLE_PRETTY_LOGS}
-      - GH_TOKEN=${GH_TOKEN}
+    env_file:
+      - .env.client
     healthcheck:
       test: ["CMD", "curl", "-f", "http://tpwfc-web:3000/api/health"]
       interval: 30s
@@ -41,16 +26,8 @@ services:
     volumes:
       - tpwfc-server-db:/app/.db
       - tpwfc-server-logs:/app/data/logs
-    environment:
-      - NODE_ENV=production
-      - PORT=${PORT:-3333}
-      - HOST_NAME=${HOST_NAME:-0.0.0.0}
-      - DATABASE_URL=${DATABASE_DISCORD_URL}
-      - LOG_LEVEL=${LOG_LEVEL}
-      - DISCORD_TOKEN=${DISCORD_TOKEN}
-      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
-      - PAYLOAD_API_URL=${PAYLOAD_API_URL}
-      - GH_PA_FG_TOKEN=${GH_PA_FG_TOKEN}
+    env_file:
+      - .env.server
     healthcheck:
       test: ["CMD", "curl", "-f", "http://tpwfc-discord-server:3333/api/health"]
       interval: 30s
@@ -68,10 +45,8 @@ services:
     image: ghcr.io/tpwfc/tpwfc-seeder:latest
     container_name: tpwfc-seeder
     restart: "no"
-    environment:
-      - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL:-http://tpwfc-web:3000}
-      - HEALTH_TIMEOUT=${HEALTH_TIMEOUT:-120}
-      - SEED_SIGNING_SECRET=${SEED_SIGNING_SECRET}
+    env_file:
+      - .env.worker
     networks:
       - tpwfc-network
     depends_on:
@@ -84,8 +59,8 @@ services:
     container_name: cloudflared
     restart: unless-stopped
     command: tunnel run
-    environment:
-      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    env_file:
+      - .env.cloudflare
     networks:
       - tpwfc-network
     depends_on:

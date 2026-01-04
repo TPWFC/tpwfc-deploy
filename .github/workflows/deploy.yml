@@ -102,7 +102,6 @@ jobs:
             LOG_COLORS=$LOG_COLORS
             LOG_SINGLE_LINE=$LOG_SINGLE_LINE
             SERVICE_NAME=$SERVICE_NAME
-            CLOUDFLARE_TUNNEL_TOKEN=$CLOUDFLARE_TUNNEL_TOKEN
             ENVEOF
             envsubst < .env.client > .env.client.tmp && mv .env.client.tmp .env.client
 
@@ -129,13 +128,19 @@ jobs:
             ENVEOF
             envsubst < .env.server > .env.server.tmp && mv .env.server.tmp .env.server
 
-            # Generate .env.seeder for data upload
-            cat > .env.seeder << 'ENVEOF'
+            # Generate .env.worker for data upload
+            cat > .env.worker << 'ENVEOF'
             ADMIN_EMAIL=$ADMIN_EMAIL
             ADMIN_PASSWORD=$ADMIN_PASSWORD
             SEED_SIGNING_SECRET=$SEED_SIGNING_SECRET
             ENVEOF
-            envsubst < .env.seeder > .env.seeder.tmp && mv .env.seeder.tmp .env.seeder
+            envsubst < .env.worker > .env.worker.tmp && mv .env.worker.tmp .env.worker
+
+            # Generate .env.cloudflare for tunnel
+            cat > .env.cloudflare << 'ENVEOF'
+            TUNNEL_TOKEN=$CLOUDFLARE_TUNNEL_TOKEN
+            ENVEOF
+            envsubst < .env.cloudflare > .env.cloudflare.tmp && mv .env.cloudflare.tmp .env.cloudflare
 
             # Download docker-compose.yaml
             curl -sL https://raw.githubusercontent.com/TPWFC/tpwfc-deploy/main/docker-compose.yaml -o docker-compose.yaml
